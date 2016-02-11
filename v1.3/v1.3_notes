@@ -1,0 +1,17 @@
+**************************
+        Progress
+**************************
+
+- Linear-Vortex Strength Inviscid Mode - Validated with NLR WT DATA
+
+- Added the RHS-Sources (preparing for Wall Transpiration Model)
+
+**************************
+        To be done
+**************************
+
+- Construct BL subroutines
+
+- Construct transition subroutines
+
+- Global Newton Solver
