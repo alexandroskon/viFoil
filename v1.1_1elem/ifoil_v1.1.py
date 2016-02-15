@@ -10,7 +10,7 @@
 #-----------------------------------------------------------------------
 import numpy as np
 
-# IFOIL Modules
+# iFOIL Modules
 from singulib import *
 from gtrans import *
 from airfoilmanip import *
@@ -92,8 +92,12 @@ for i in range(0,N):
     RHS_S[i] = SUM
 
 # Total RHS vector is due to freestream and sources
-RHS = RHS_F + RHS_S 
+RHS = RHS_F + RHS_S
 
+print('RHS_S')
+print(RHS_S)
+print('RHS_F')
+print(RHS_F)
 # Kutta - Condition
 #-----------------------------------------------------------------------
 
@@ -104,7 +108,7 @@ SHARP_TE = True
 # this problem the i=N equation is discarded and replaced by an interpolation
 # of the mean gamma to the TE. [p.3 in Ref. "XFOIL: A Design and Analysis System 
 # for Low Reynolds number Airfoils", Mark Drela]
-# (g_3-2*g_2+g_1) - (g_n-1 - 2*g_n + g_n+1) = 0, the interpolation relation
+# (g_3-2*g_2+g_1) - (g_n-1 - 2*g_n + g_n+1) = 0 is the interpolation relation
 
 if SHARP_TE:
     # Impose Interpolated Kutta Condition
