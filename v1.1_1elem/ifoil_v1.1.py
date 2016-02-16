@@ -84,6 +84,7 @@ for i in range(0,N):
     SUM = 0
     for j in range(0,N):
         
+        #if (i == j or (i == 0 and j == N-1) or (i == N-1 and j == 0)):
         if (i == j):
             U1,W1,U2,W2 = SOR2DL(sig[j],sig[j+1],XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],True)
         else:
@@ -101,8 +102,11 @@ print(RHS_F)
 # Kutta - Condition
 #-----------------------------------------------------------------------
 
-# Proper treatment of SHARP trailing edge
+# Proper treatment of SHARP and BLUNT trailing edge
 SHARP_TE = True
+
+# For BLUNT trailing edges M. Drela provides a correction formula
+# [ref. XFOIL paper]
 
 # For airfoils with SHARP TE nodes i=1 and i=N+1 coincide. To circumvent
 # this problem the i=N equation is discarded and replaced by an interpolation
