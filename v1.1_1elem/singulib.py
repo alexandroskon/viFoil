@@ -28,15 +28,15 @@ def VOR2DL(g1,g2,XC,ZC,X1,Z1,X2,Z2,TH,SELF_IND):
     # ACCOUNT FOR THE SELF-INDUCED EFFECT ON PANEL.THESE VELOCITIES ARE 
     # IN THE JTH REFERENCE FRAME.
     if SELF_IND:
-        ua = -0.5*(X-X2)/(X2)
-        ub =  0.5*(X)/(X2)
-        wa = -1/(2*pi)
-        wb =  1/(2*pi)
+        ua = -0.5*g1*(X-X2)/(X2)
+        ub =  0.5*g2*(X)/(X2)
+        wa = -g1/(2*pi)
+        wb =  g2/(2*pi)
     else:
-        ua = ((-Z*np.log(R2/R1)+(X2-X)*(TH2-TH1)))/(2*np.pi*X2)
-        ub = (Z*np.log(R2/R1)+X*(TH2-TH1))/(2*np.pi*X2)
-        wa =-((X2-Z*(TH2-TH1))-X*np.log(R1/R2)+X2*np.log(R1/R2))/(2*np.pi*X2)
-        wb = ((X2-Z*(TH2-TH1))-X*np.log(R1/R2))/(2*np.pi*X2)
+        ua = g1*(((-Z*np.log(R2/R1)+(X2-X)*(TH2-TH1)))/(2*np.pi*X2))
+        ub = g2*((Z*np.log(R2/R1)+X*(TH2-TH1))/(2*np.pi*X2))
+        wa =-g1*(((X2-Z*(TH2-TH1))-X*np.log(R1/R2)+X2*np.log(R1/R2))/(2*np.pi*X2))
+        wb = g2*(((X2-Z*(TH2-TH1))-X*np.log(R1/R2))/(2*np.pi*X2))
         
     #TRANSFORM THE LOCAL VELOCITIES INTO THE GLOBAL REFERENCE FRAME.
     ua,wa = ROT(ua,wa,-TH)

@@ -19,7 +19,7 @@ from aeroplot import *
 #-----------------------------------------------------------------------
 # Input airfoil coordinates (in Xfoil format)
 # XF,ZF are airfoil coordinates and N the number of panels
-XF,ZF,N = INPUT_AIRFOIL('sd7037')
+XF,ZF,N = INPUT_AIRFOIL('s1223')
 PT1,PT2,XC,ZC,TH,n,t = FOIL_PANELING(XF,ZF,N)
 
 # Initialize matrices
@@ -132,6 +132,93 @@ else:
 #-----------------------------------------------------------------------
 g = np.linalg.solve(a,RHS)
 
+# Compute wake trajectory
+#-----------------------------------------------------------------------
+
+# Number of wake points
+# XFOIL -> NW = N/8 + 2
+NW = N/4+2
+
+# Update matrix size to include wake
+XF = np.append(XF,np.zeros(NW),axis=0)
+ZF = np.append(ZF,np.zeros(NW),axis=0)
+TH = np.append(TH,np.zeros(NW),axis=0)
+DL = np.append(DL,np.zeros(NW),axis=0)
+n  = np.append(n,np.zeros([NW,2]),axis=0)
+
+# Set first wake point a tiny distance behind TE
+# Treat SHARP and BLUNT trailing edge in separate
+if SHARP_TE == False:
+    XTE = 0.5*(XF[0]+XF[N])
+    ZTE = 0.5*(ZF[0]+ZF[N])
+    SX = 0.5*(ZF[N] - ZF[0])
+    SZ = 0.5*(XF[0] - XF[N])
+    SMOD = np.sqrt(SX**2 + SZ**2)
+    n[N,0]  = SX/SMOD
+    n[N,1]  = SZ/SMOD
+    XF[N+1] = XTE - 0.0001*n[N,1]
+    ZF[N+1] = ZTE + 0.0001*n[N,0]
+else:
+    XTE = XF[N]
+    ZTE = ZF[N]
+    n[N,0] = 0.5*(n[0,0]+n[N-1,0])   
+    n[N,1] = 0.5*(n[0,1]+n[N-1,1])
+    XF[N+1] = XTE - 0.0001*n[N,1]
+    ZF[N+1] = ZTE + 0.0001*n[N,0]
+    # Singularity issue?
+    #XF[N+1] = XF[N]
+    #ZF[N+1] = ZF[N]
+    
+#DL[N]   = S(N)
+
+# Calculate velocity components at first point
+U = 0; W = 0
+for j in range(0,N):
+    U1,W1,U2,W2 = VOR2DL(g[j],g[j+1],XF[N+1],ZF[N+1],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],False)
+    U = U + (U1+U2)
+    W = W + (W1+W2)      
+
+# Add freestream contribution
+U = U + np.cos(AL)
+W = W + np.sin(AL)
+
+# Set unit vector normal to wake at first point
+n[N+1,0] = W / np.sqrt(W**2 + U**2)
+n[N+1,1] = U / np.sqrt(W**2 + U**2)
+    
+# Set rest of wake points
+for i in range(N+2,N+NW):
+    #DS = SNEW(I) - SNEW(I-1)
+    DLW = 0.2*DL.max()
+    
+    # Set new point DL downstream of last point
+    XF[i] = XF[i-1] + DLW*n[i-1,1]
+    ZF[i] = ZF[i-1] + DLW*n[i-1,0]
+    #S(I) = S(I-1) + DL
+    
+    # Set angle of wake panel normal
+    TH[i] = np.arctan2((ZF[i]-ZF[i-1]),(XF[i]-XF[i-1]))
+    
+    if i == N+NW-1:
+        continue
+    
+    # Calculate velocity components for next point
+    U = 0; W = 0
+    for j in range(0,N):
+        U1,W1,U2,W2 = VOR2DL(g[j],g[j+1],XF[i],ZF[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],False)
+        U = U + (U1+U2)
+        W = W + (W1+W2) 
+    
+    U = U + np.cos(AL)
+    W = W + np.sin(AL)
+    
+    # Calculate normal vector for next point
+    n[i,0] = W / np.sqrt(W**2 + U**2)
+    n[i,1] = U / np.sqrt(W**2 + U**2)
+    
+    # set angle of wake panel normal
+    # APANEL(I) = ATAN2( PSI_Y , PSI_X )
+    
 # Post-processing data
 #-----------------------------------------------------------------------
 
@@ -150,8 +237,9 @@ for i in range(0,N):
     V[i] = VEL + np.cos(AL)*t[i,0]+np.sin(AL)*t[i,1]
     CP[i] = 1-V[i]**2
     CL = CL + (-1*CP[i])*(np.cos(AL)*np.cos(TH[i]) + np.sin(AL)*np.sin(TH[i]))*DL[i]
-  
+    
+    #REPORT BUG: CL != 0 FOR SYMMETRIC AIRFOILS
 # Plot results
 #-----------------------------------------------------------------------
-aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL)
+aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW)
 
