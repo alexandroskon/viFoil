@@ -4,7 +4,7 @@ rcParams['figure.figsize'] = 15, 10
 np.set_printoptions(threshold=np.nan)
 
 
-def aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW):
+def aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW,n,t):
     #print(FOIL_NAME)
     #print('RHS')
     #print(RHS)
@@ -29,8 +29,10 @@ def aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW):
     plt.grid()
 
     #Show Normal Panel Vectors
-    #plt.quiver(XC,ZC,n1[:,0],n1[:,1])
-    #plt.quiver(XC,ZC,t1[:,0],t1[:,1])
+    plt.quiver(XC,ZC,n[0:N,0],n[0:N,1])
+    plt.quiver(XC,ZC,t[0:N,0],t[0:N,1])
+    plt.quiver(XF[N+1:N+NW],ZF[N+1:N+NW], n[N:N+NW,0],n[N:N+NW,1])
+    #plt.quiver(XF[N+1:N+NW],ZF[N+1:N+NW], n
     
     fig, ax1 = plt.subplots()
     ax1.plot(XC,CP, marker='o', color='k', linestyle='-')

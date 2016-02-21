@@ -4,7 +4,7 @@ rcParams['figure.figsize'] = 15, 10
 np.set_printoptions(threshold=np.nan)
 
 
-def aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW):
+def aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW,n,t):
     #print(FOIL_NAME)
     #print('RHS')
     #print(RHS)
@@ -29,8 +29,9 @@ def aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW):
     plt.grid()
 
     #Show Normal Panel Vectors
-    #plt.quiver(XC,ZC,n1[:,0],n1[:,1])
-    #plt.quiver(XC,ZC,t1[:,0],t1[:,1])
+    plt.quiver(XC,ZC,n[:,0],n[:,1])
+    plt.quiver(XC,ZC,t[:,0],t[:,1])
+    #plt.quiver(XF[N+1:N+NW],ZF[N+1:N+NW], n
     
     fig, ax1 = plt.subplots()
     ax1.plot(XC,CP, marker='o', color='k', linestyle='-')
@@ -52,7 +53,7 @@ def aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW):
     
     ax2 = ax1.twinx()
     ax2.plot(XF[0:N+1],ZF[0:N+1], 'k', linewidth=2.5)
-    ax2.plot(XF1[N+1:N+NW+1],ZF1[N+1:N+NW+1], 'k', linewidth=2.5)
+    ax2.plot(XF[N+1:N+NW],ZF[N+1:N+NW], 'k', linewidth=2.5)
     ax2.set_ylabel('Airfoil Thickness', color='k')
     ax2.set_xlim([-0.1, 1.1])
     #ax2.set_ylim([1.2*np.amin(CP), 1.2*np.amax(CP)])
