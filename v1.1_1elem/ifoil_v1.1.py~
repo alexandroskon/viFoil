@@ -15,8 +15,8 @@ from singulib import *
 from gtrans import *
 from airfoilmanip import *
 from aeroplot import *
-
 #-----------------------------------------------------------------------
+
 # Input airfoil coordinates (in Xfoil format)
 # XF,ZF are airfoil coordinates and N the number of panels
 XF,ZF,N = INPUT_AIRFOIL('s1223')
@@ -30,7 +30,8 @@ RHS_F = np.zeros(N+1)
 RHS_S = np.zeros(N+1)
 RHS   = np.zeros(N+1)
 
-# Setup aerodynamic influence coefficient (AIC) matrix 
+# Setup aerodynamic influence coefficient (AIC) matrix
+# or unit-vorticity matrix 
 #-----------------------------------------------------------------------
 # i-th panel collocation point
 for i in range(0,N):
@@ -67,38 +68,19 @@ for i in range(0,N):
           
 # Setup RHS vector
 #-----------------------------------------------------------------------
-sig = np.zeros(N+1)
 
-# DEFINE FREESTREAM AOA
+# Define freestream angle of attack
 ALPHA = input('Enter angle of attack (deg):\t')
 AL=ALPHA/(180/np.pi)
 
 for i in range(0,N):
-    
     # RHS FREESTREAM terms computed at each collocation point 
-    RHS_F[i] = -np.cos(AL)*n[i,0] - np.sin(AL)*n[i,1]
-    
-    # RHS SOURCE terms computed at each collocation point
-    # Source terms are employed for the WALL-TRANSPIRATION MODEL
-    # modeling the BL's dispacement thickness 
-    SUM = 0
-    for j in range(0,N):
-        
-        #if (i == j or (i == 0 and j == N-1) or (i == N-1 and j == 0)):
-        if (i == j):
-            U1,W1,U2,W2 = SOR2DL(sig[j],sig[j+1],XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],True)
-        else:
-            U1,W1,U2,W2 = SOR2DL(sig[j],sig[j+1],XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],False)
-        SUM = SUM - ((U1+U2)*n[i,0] + (W1+W2)*n[i,1])    
-    RHS_S[i] = SUM
+    RHS_F[i] = -np.cos(AL)*n[i,0] - np.sin(AL)*n[i,1]    
 
 # Total RHS vector is due to freestream and sources
-RHS = RHS_F + RHS_S
+#RHS = RHS_F + RHS_S
+RHS = RHS_F
 
-print('RHS_S')
-print(RHS_S)
-print('RHS_F')
-print(RHS_F)
 # Kutta - Condition
 #-----------------------------------------------------------------------
 
@@ -135,6 +117,26 @@ g = np.linalg.solve(a,RHS)
 # Compute wake trajectory
 #-----------------------------------------------------------------------
 XF,ZF,TH,DL,n,NW = XYWAKE(g,PT1,PT2,XF,ZF,TH,DL,n,N,AL,SHARP_TE)
+
+
+# Add source distribution - Wall-transpiration model
+#-----------------------------------------------------------------------
+sig = np.zeros(N+1)
+
+for i in range(0,N):
+    # RHS SOURCE terms computed at each collocation point
+    # Source terms are employed for the WALL-TRANSPIRATION MODEL
+    # modeling the BL's dispacement thickness 
+    SUM = 0
+    for j in range(0,N):
+        
+        #if (i == j or (i == 0 and j == N-1) or (i == N-1 and j == 0)):
+        if (i == j):
+            U1,W1,U2,W2 = SOR2DL(sig[j],sig[j+1],XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],True)
+        else:
+            U1,W1,U2,W2 = SOR2DL(sig[j],sig[j+1],XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],False)
+        SUM = SUM - ((U1+U2)*n[i,0] + (W1+W2)*n[i,1])    
+    RHS_S[i] = SUM
 
 # Post-processing data
 #-----------------------------------------------------------------------
