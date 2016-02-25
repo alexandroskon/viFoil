@@ -42,11 +42,13 @@ for i in range(0,N):
         
         # Self-induced effect for i=j
         if i == j:
-            U1,W1,U2,W2 = VOR2DL(1,1,XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],True)
+            U1,W1,U2,W2 = VOR2DL(1,1,XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0], \
+            PT2[j,1],TH[j],True)
             # Save panel length for lift coefficient calc.
             DL[j] = PAN_LEN(PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j])
         else:
-            U1,W1,U2,W2 = VOR2DL(1,1,XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],False)
+            U1,W1,U2,W2 = VOR2DL(1,1,XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],\
+            TH[j],False)
         
         # Compute c[i,j] influences for unit-vorticity
         if (j == 0):
@@ -118,10 +120,10 @@ g = np.linalg.solve(a,RHS)
 
 # Compute wake trajectory
 #-----------------------------------------------------------------------
-XF,ZF,TH,DL,n,NW = XYWAKE(g,PT1,PT2,XF,ZF,TH,DL,n,N,AL,SHARP_TE)
+XF,ZF,PT1,PT2,XC,ZC,TH,DL,n,t,NW = XZWAKE(g,PT1,PT2,XF,ZF,XC,ZC,TH,DL,n,t,N,AL,SHARP_TE)
 
 
-# Add source distribution - Wall-transpiration model
+# Compute source influence coefficients - Wall-transpiration model
 #-----------------------------------------------------------------------
 sig = np.zeros(N+1)
 
@@ -142,7 +144,6 @@ for i in range(0,N):
 
 # Post-processing data
 #-----------------------------------------------------------------------
-
 # Aerodynamic computations
 #-----------------------------------------------------------------------
 # Primary airfoil
@@ -163,4 +164,3 @@ for i in range(0,N):
 # Plot results
 #-----------------------------------------------------------------------
 aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW,n,t)
-

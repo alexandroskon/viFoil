@@ -89,11 +89,11 @@ def FOIL_PANELING(XF,ZF,N):
 
 # Compute wake trajectory
 #-----------------------------------------------------------------------
-def XYWAKE(g,PT1,PT2,XF,ZF,TH,DL,n,N,AL,SHARP_TE):
+def XZWAKE(g,PT1,PT2,XF,ZF,XC,ZC,TH,DL,n,t,N,AL,SHARP_TE):
     # Number of wake points
     # XFOIL -> NW = N/8 + 2
     NW = N/4+2
-
+    
     # Exponential wake panel spacing
     DLW = np.zeros(NW-1)
     xx = -1
@@ -108,51 +108,52 @@ def XYWAKE(g,PT1,PT2,XF,ZF,TH,DL,n,N,AL,SHARP_TE):
             DLW[i] = DL.max()
           
     # Update matrix size to include wake
-    XF = np.append(XF,np.zeros(NW),axis=0)
-    ZF = np.append(ZF,np.zeros(NW),axis=0)
-    TH = np.append(TH,np.zeros(NW),axis=0)
-    DL = np.append(DL,np.zeros(NW),axis=0)
-    n  = np.append(n,np.zeros([NW,2]),axis=0)
+    XF  = np.append(XF,np.zeros(NW),axis=0)
+    ZF  = np.append(ZF,np.zeros(NW),axis=0)
+    PT1 = np.append(PT1,np.zeros([NW-2,2]),axis=0)
+    PT2 = np.append(PT2,np.zeros([NW-2,2]),axis=0)
+    XC  = np.append(XC,np.zeros(NW-2),axis=0)
+    ZC  = np.append(ZC,np.zeros(NW-2),axis=0)
+    TH  = np.append(TH,np.zeros(NW-2),axis=0)
+    DL  = np.append(DL,np.zeros(NW-2),axis=0)
+    n   = np.append(n,np.zeros([NW-2,2]),axis=0)
+    t  = np.append(t,np.zeros([NW-2,2]),axis=0)
 
     # Set first wake point a tiny distance behind TE
     # Treat SHARP and BLUNT trailing edge in separate
     if SHARP_TE == False:
         XTE = 0.5*(XF[0]+XF[N])
         ZTE = 0.5*(ZF[0]+ZF[N])
-        SX = 0.5*(ZF[N] - ZF[0])
-        SZ = 0.5*(XF[0] - XF[N])
-        SMOD = np.sqrt(SX**2 + SZ**2)
-        n[N,0]  = SX/SMOD
-        n[N,1]  = SZ/SMOD
-        XF[N+1] = XTE - 0.0001*n[N,1]
-        ZF[N+1] = ZTE + 0.0001*n[N,0]
+        #SX = 0.5*(ZF[N] - ZF[0])
+        #SZ = 0.5*(XF[0] - XF[N])
+        #SMOD = np.sqrt(SX**2 + SZ**2)
+        #n[N,0]  = SX/SMOD
+        #n[N,1]  = SZ/SMOD
+        XF[N+1] = XTE 
+        ZF[N+1] = ZTE
     else:
         XTE = XF[N]
         ZTE = ZF[N]
-        n[N,0] = 0.5*(n[0,0]+n[N-1,0])   
-        n[N,1] = 0.5*(n[0,1]+n[N-1,1])
-        XF[N+1] = XTE - 0.0001*n[N,1]
-        ZF[N+1] = ZTE + 0.0001*n[N,0]
-        # Singularity issue?
-        #XF[N+1] = XF[N]
-        #ZF[N+1] = ZF[N]
-        
+        #n[N,0] = 0.5*(n[0,0]+n[N-1,0])   
+        #n[N,1] = 0.5*(n[0,1]+n[N-1,1])
+        #XF[N+1] = XTE - 0.0001*n[N,1]
+        #ZF[N+1] = ZTE + 0.0001*n[N,0]
+        XF[N+1] = XTE - 0.00001
+        ZF[N+1] = ZTE + 0.00001
+    
     #DL[N]   = S(N)
 
     # Calculate velocity components at first point
     U = 0; W = 0
     for j in range(0,N):
-        U1,W1,U2,W2 = VOR2DL(g[j],g[j+1],XF[N+1],ZF[N+1],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],False)
+        U1,W1,U2,W2 = VOR2DL(g[j],g[j+1],XF[N+1],ZF[N+1],PT1[j,0],PT1[j,1],PT2[j,0]\
+        ,PT2[j,1],TH[j],False)
         U = U + (U1+U2)
         W = W + (W1+W2)      
 
     # Velocity field as superposition of vortex strenghts and freestream
     U = U + np.cos(AL)
     W = W + np.sin(AL)
-
-    # Set unit vector normal to wake at first point
-    n[N+1,0] = W / np.sqrt(W**2 + U**2)
-    n[N+1,1] = U / np.sqrt(W**2 + U**2)
         
     # Set rest of wake points
     for i in range(N+2,N+NW):
@@ -160,12 +161,18 @@ def XYWAKE(g,PT1,PT2,XF,ZF,TH,DL,n,N,AL,SHARP_TE):
         #DLW = 0.2*DL.max()
         
         # Set new point DL downstream of last point
-        XF[i] = XF[i-1] + DLW[i-N-2]*n[i-1,1]
-        ZF[i] = ZF[i-1] + DLW[i-N-2]*n[i-1,0]
+        XF[i] = XF[i-1] + DLW[i-N-2]*U
+        ZF[i] = ZF[i-1] + DLW[i-N-2]*W
         #S(I) = S(I-1) + DL
         
         # Set angle of wake panel normal
-        TH[i] = np.arctan2((ZF[i]-ZF[i-1]),(XF[i]-XF[i-1]))
+        TH[i-2] = np.arctan2((ZF[i]-ZF[i-1]),(XF[i]-XF[i-1]))
+        
+        # Set wake panel normal and tangential vector
+        n[i-2,0] = -np.sin(TH[i-2])
+        n[i-2,1] =  np.cos(TH[i-2])
+        t[i-2,0] =  np.cos(TH[i-2])
+        t[i-2,1] =  np.sin(TH[i-2])
         
         if i == N+NW-1:
             continue
@@ -173,19 +180,29 @@ def XYWAKE(g,PT1,PT2,XF,ZF,TH,DL,n,N,AL,SHARP_TE):
         # Calculate velocity components for next point
         U = 0; W = 0
         for j in range(0,N):
-            U1,W1,U2,W2 = VOR2DL(g[j],g[j+1],XF[i],ZF[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],False)
+            U1,W1,U2,W2 = VOR2DL(g[j],g[j+1],XF[i],ZF[i],PT1[j,0],PT1[j,1],PT2[j,0],\
+            PT2[j,1],TH[j],False)
             U = U + (U1+U2)
             W = W + (W1+W2) 
         
         # Velocity field as superposition of vortex strenghts and freestream
         U = U + np.cos(AL)
         W = W + np.sin(AL)
+    
+    # Store coordinates of wake panel end points
+    for i in range(N+1,N+NW-1):
+        PT1[i-1,0]=XF[i]
+        PT2[i-1,0]=XF[i+1]
+        PT1[i-1,1]=ZF[i]
+        PT2[i-1,1]=ZF[i+1]
+    
+    # Store coordinates of wake panel collocation points
+    for i in range(N+1,N+NW-1):
+        XC[i-1] = (XF[i]+XF[i+1])/2
+        ZC[i-1] = (ZF[i]+ZF[i+1])/2
         
-        # Calculate normal vector for next point
-        n[i,0] = W / np.sqrt(W**2 + U**2)
-        n[i,1] = U / np.sqrt(W**2 + U**2)
-        
-        # set angle of wake panel normal
-        # APANEL(I) = ATAN2( PSI_Y , PSI_X )
-        
-    return XF,ZF,TH,DL,n,NW
+    # Store wake panel lengths
+    for i in range(N,N+NW-2):
+        DL[i] = DLW[i-N] 
+              
+    return XF,ZF,PT1,PT2,XC,ZC,TH,DL,n,t,NW

@@ -10,7 +10,6 @@ def aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW,n,t):
     #print(RHS)
     print('CL')
     print(CL)
-
     #np.savetxt('CPDATA_8DEG',CP)
     #np.set_printoptions(threshold='nan')
 
@@ -27,14 +26,17 @@ def aeroplot(RHS,CL,CP,g,XF,ZF,XC,ZC,AL,N,NW,n,t):
     #plt.xlim(-0.1, 1.1)
     #plt.ylim(-0.2, 0.2)
     plt.grid()
-
+    
+    
     #Show Normal Panel Vectors
-    plt.quiver(XC,ZC,n[:,0],n[:,1])
-    plt.quiver(XC,ZC,t[:,0],t[:,1])
+    plt.quiver(XC[0:N],ZC[0:N],n[0:N,0],n[0:N,1])
+    plt.quiver(XC[0:N],ZC[0:N],t[0:N,0],t[0:N,1])
+    #plt.quiver(XC[N:N+NW],ZC[N:N+NW], n[N:N+NW,0],n[N:N+NW,1])
+    plt.quiver(XC[N:N+NW],ZC[N:N+NW], t[N:N+NW,0],t[N:N+NW,1])
     #plt.quiver(XF[N+1:N+NW],ZF[N+1:N+NW], n
     
     fig, ax1 = plt.subplots()
-    ax1.plot(XC,CP, marker='o', color='k', linestyle='-')
+    ax1.plot(XC[0:N],CP, marker='o', color='k', linestyle='-')
     ax1.set_xlabel('x/c')
     # Make the y-axis label and tick labels match the line color.
     ax1.set_ylabel(r'$C_p$', color='k', fontsize=20)
