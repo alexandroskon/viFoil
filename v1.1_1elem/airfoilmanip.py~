@@ -110,14 +110,14 @@ def XZWAKE(g,PT1,PT2,XF,ZF,XC,ZC,TH,DL,n,t,N,AL,SHARP_TE):
     # Update matrix size to include wake
     XF  = np.append(XF,np.zeros(NW),axis=0)
     ZF  = np.append(ZF,np.zeros(NW),axis=0)
-    PT1 = np.append(PT1,np.zeros([NW-2,2]),axis=0)
-    PT2 = np.append(PT2,np.zeros([NW-2,2]),axis=0)
-    XC  = np.append(XC,np.zeros(NW-2),axis=0)
-    ZC  = np.append(ZC,np.zeros(NW-2),axis=0)
-    TH  = np.append(TH,np.zeros(NW-2),axis=0)
-    DL  = np.append(DL,np.zeros(NW-2),axis=0)
-    n   = np.append(n,np.zeros([NW-2,2]),axis=0)
-    t  = np.append(t,np.zeros([NW-2,2]),axis=0)
+    PT1 = np.append(PT1,np.zeros([NW,2]),axis=0)
+    PT2 = np.append(PT2,np.zeros([NW,2]),axis=0)
+    XC  = np.append(XC,np.zeros(NW),axis=0)
+    ZC  = np.append(ZC,np.zeros(NW),axis=0)
+    TH  = np.append(TH,np.zeros(NW),axis=0)
+    DL  = np.append(DL,np.zeros(NW),axis=0)
+    n   = np.append(n,np.zeros([NW,2]),axis=0)
+    t  = np.append(t,np.zeros([NW,2]),axis=0)
 
     # Set first wake point a tiny distance behind TE
     # Treat SHARP and BLUNT trailing edge in separate
@@ -156,7 +156,7 @@ def XZWAKE(g,PT1,PT2,XF,ZF,XC,ZC,TH,DL,n,t,N,AL,SHARP_TE):
     W = W + np.sin(AL)
         
     # Set rest of wake points
-    for i in range(N+2,N+NW):
+    for i in range(N+2,N+NW+1):
         #DS = SNEW(I) - SNEW(I-1)
         #DLW = 0.2*DL.max()
         
@@ -166,15 +166,15 @@ def XZWAKE(g,PT1,PT2,XF,ZF,XC,ZC,TH,DL,n,t,N,AL,SHARP_TE):
         #S(I) = S(I-1) + DL
         
         # Set angle of wake panel normal
-        TH[i-2] = np.arctan2((ZF[i]-ZF[i-1]),(XF[i]-XF[i-1]))
+        TH[i-1] = np.arctan2((ZF[i]-ZF[i-1]),(XF[i]-XF[i-1]))
         
         # Set wake panel normal and tangential vector
-        n[i-2,0] = -np.sin(TH[i-2])
-        n[i-2,1] =  np.cos(TH[i-2])
-        t[i-2,0] =  np.cos(TH[i-2])
-        t[i-2,1] =  np.sin(TH[i-2])
+        n[i-1,0] = -np.sin(TH[i-1])
+        n[i-1,1] =  np.cos(TH[i-1])
+        t[i-1,0] =  np.cos(TH[i-1])
+        t[i-1,1] =  np.sin(TH[i-1])
         
-        if i == N+NW-1:
+        if i == N+NW:
             continue
         
         # Calculate velocity components for next point
@@ -188,21 +188,22 @@ def XZWAKE(g,PT1,PT2,XF,ZF,XC,ZC,TH,DL,n,t,N,AL,SHARP_TE):
         # Velocity field as superposition of vortex strenghts and freestream
         U = U + np.cos(AL)
         W = W + np.sin(AL)
+
     
     # Store coordinates of wake panel end points
-    for i in range(N+1,N+NW-1):
-        PT1[i-1,0]=XF[i]
-        PT2[i-1,0]=XF[i+1]
-        PT1[i-1,1]=ZF[i]
-        PT2[i-1,1]=ZF[i+1]
+    for i in range(N+2,N+NW):
+        PT1[i-1,0]=XF[i-1]
+        PT2[i-1,0]=XF[i]
+        PT1[i-1,1]=ZF[i-1]
+        PT2[i-1,1]=ZF[i]
     
     # Store coordinates of wake panel collocation points
-    for i in range(N+1,N+NW-1):
-        XC[i-1] = (XF[i]+XF[i+1])/2
-        ZC[i-1] = (ZF[i]+ZF[i+1])/2
+    for i in range(N+2,N+NW):
+        XC[i-1] = (XF[i-1]+XF[i])/2
+        ZC[i-1] = (ZF[i-1]+ZF[i])/2
         
     # Store wake panel lengths
-    for i in range(N,N+NW-2):
-        DL[i] = DLW[i-N] 
-        
-    return XF,ZF,PT1,PT2,XC,ZC,TH,DL,n,NW
+    for i in range(N+1,N+NW):
+        DL[i] = DLW[i-(N+1)] 
+              
+    return XF,ZF,PT1,PT2,XC,ZC,TH,DL,n,t,NW

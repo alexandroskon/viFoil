@@ -19,7 +19,7 @@ from aeroplot import *
 
 # Input airfoil coordinates (in Xfoil format)
 # XF,ZF are airfoil coordinates and N the number of panels
-XF,ZF,N = INPUT_AIRFOIL('s1223')
+XF,ZF,N = INPUT_AIRFOIL('sd7037')
 PT1,PT2,XC,ZC,TH,n,t = FOIL_PANELING(XF,ZF,N)
 
 # Initialize matrices
@@ -125,9 +125,9 @@ XF,ZF,PT1,PT2,XC,ZC,TH,DL,n,t,NW = XZWAKE(g,PT1,PT2,XF,ZF,XC,ZC,TH,DL,n,t,N,AL,S
 
 # Compute source influence coefficients - Wall-transpiration model
 #-----------------------------------------------------------------------
-c   = np.zeros((N+NW-2,N+NW-1))
-d   = np.zeros((N+NW-2,N+NW-1))
-sig = np.zeros(N+NW)
+c   = np.zeros((N+NW+1,N+NW+1))
+d   = np.zeros((N+NW+1,N+NW+1))
+sig = np.zeros(N+NW+1)
 
 # Source terms are employed for the WALL-TRANSPIRATION MODEL
 # modeling the BL's dispacement thickness 
@@ -135,28 +135,26 @@ sig = np.zeros(N+NW)
 # Setup aerodynamic influence coefficient (AIC) matrix (Source Influences)
 #-------------------------------------------------------------------------
 # i-th panel collocation point
-for i in range(0,N+NW-2):
+for i in range(0,N+NW):
+    # i = N corresponds to an imaginary connecting panel, nothing to compute
+    if i == N:
+        continue
     # j-th corner-point panel index (where singularities are placed)       
-    for j in range(0,N+NW-2):
+    for j in range(0,N+NW):
         # Calculate velocities at i-th colloc. point due to singularities on 
         # the j-th and (j+1)-th corner points (linear singularity)   
         
-        if j < N:
-            l = j
-                
+        # j = N corresponds to an imaginary connecting panel, nothing to compute
         if j == N:
             continue
-
-        if j > N:
-            l = j-1
-                 
+        
         # Self-induced effect for i=j
-        if i == l:
-            U1,W1,U2,W2 = SOR2DL(1,1,XC[i],ZC[i],PT1[l,0],PT1[l,1],PT2[l,0], \
-            PT2[l,1],TH[l],True)
+        if i == j:
+            U1,W1,U2,W2 = SOR2DL(1,1,XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0], \
+            PT2[j,1],TH[j],True)
         else:
-            U1,W1,U2,W2 = SOR2DL(1,1,XC[i],ZC[i],PT1[l,0],PT1[l,1],PT2[l,0],PT2[l,1],\
-            TH[l],False)
+            U1,W1,U2,W2 = SOR2DL(1,1,XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],\
+            TH[j],False)
         
         # Compute c[i,j] influences for unit-vorticity
         if (j == 0 or j == N+1):
@@ -164,7 +162,7 @@ for i in range(0,N+NW-2):
             HOLDC  =  U2*n[i,0] + W2*n[i,1]
             d[j,0] =  U1*t[i,0] + W1*t[i,1]
             HOLDD  =  U2*t[i,0] + W2*t[i,1]
-        elif (j == N-1 or j == N+NW-3):
+        elif (j == N-1 or j == N+NW-1):
             c[i,j]   =  U1*n[i,0] + W1*n[i,1] + HOLDC
             c[i,j+1] =  U2*n[i,0] + W2*n[i,1]
             d[i,j]   =  U1*t[i,0] + W1*t[i,1] + HOLDD
@@ -175,6 +173,27 @@ for i in range(0,N+NW-2):
             d[i,j]   =  U1*t[i,0] + W1*t[i,1] + HOLDD
             HOLDD    =  U2*t[i,0] + W2*t[i,1]
 
+print('N')
+print(N)
+print('NW')
+print(NW)
+print('XC')
+print(len(XC))
+print('PT')
+print(len(PT1))
+print('XF')
+print(len(XF))
+print('TH')
+print(len(TH))
+print('DL')
+print(len(DL))
+print('n')
+print(len(n))
+print(TH)
+print(XC)
+print(PT1)
+print(DL)
+print(c)
 # Post-processing data
 #-----------------------------------------------------------------------
 # Aerodynamic computations
@@ -188,7 +207,7 @@ for i in range(0,N):
     VEL = 0
     for j in range(0,N+1):
         VEL = VEL + b[i,j]*g[j]
-    for j in range(0,N+NW-1):
+    for j in range(0,N+NW+1):
         VEL = VEL + c[i,j]*sig[j]
         
     V[i] = VEL + np.cos(AL)*t[i,0]+np.sin(AL)*t[i,1]
