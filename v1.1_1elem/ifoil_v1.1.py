@@ -125,22 +125,55 @@ XF,ZF,PT1,PT2,XC,ZC,TH,DL,n,t,NW = XZWAKE(g,PT1,PT2,XF,ZF,XC,ZC,TH,DL,n,t,N,AL,S
 
 # Compute source influence coefficients - Wall-transpiration model
 #-----------------------------------------------------------------------
-sig = np.zeros(N+1)
+c   = np.zeros((N+NW-2,N+NW-1))
+d   = np.zeros((N+NW-2,N+NW-1))
+sig = np.zeros(N+NW)
 
-for i in range(0,N):
-    # RHS SOURCE terms computed at each collocation point
-    # Source terms are employed for the WALL-TRANSPIRATION MODEL
-    # modeling the BL's dispacement thickness 
-    SUM = 0
-    for j in range(0,N):
+# Source terms are employed for the WALL-TRANSPIRATION MODEL
+# modeling the BL's dispacement thickness 
+
+# Setup aerodynamic influence coefficient (AIC) matrix (Source Influences)
+#-------------------------------------------------------------------------
+# i-th panel collocation point
+for i in range(0,N+NW-2):
+    # j-th corner-point panel index (where singularities are placed)       
+    for j in range(0,N+NW-2):
+        # Calculate velocities at i-th colloc. point due to singularities on 
+        # the j-th and (j+1)-th corner points (linear singularity)   
         
-        #if (i == j or (i == 0 and j == N-1) or (i == N-1 and j == 0)):
-        if (i == j):
-            U1,W1,U2,W2 = SOR2DL(sig[j],sig[j+1],XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],True)
+        if j < N:
+            l = j
+                
+        if j == N:
+            continue
+
+        if j > N:
+            l = j-1
+                 
+        # Self-induced effect for i=j
+        if i == l:
+            U1,W1,U2,W2 = SOR2DL(1,1,XC[i],ZC[i],PT1[l,0],PT1[l,1],PT2[l,0], \
+            PT2[l,1],TH[l],True)
         else:
-            U1,W1,U2,W2 = SOR2DL(sig[j],sig[j+1],XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],TH[j],False)
-        SUM = SUM - ((U1+U2)*n[i,0] + (W1+W2)*n[i,1])    
-    RHS_S[i] = SUM
+            U1,W1,U2,W2 = SOR2DL(1,1,XC[i],ZC[i],PT1[l,0],PT1[l,1],PT2[l,0],PT2[l,1],\
+            TH[l],False)
+        
+        # Compute c[i,j] influences for unit-vorticity
+        if (j == 0 or j == N+1):
+            c[j,0] =  U1*n[i,0] + W1*n[i,1]
+            HOLDC  =  U2*n[i,0] + W2*n[i,1]
+            d[j,0] =  U1*t[i,0] + W1*t[i,1]
+            HOLDD  =  U2*t[i,0] + W2*t[i,1]
+        elif (j == N-1 or j == N+NW-3):
+            c[i,j]   =  U1*n[i,0] + W1*n[i,1] + HOLDC
+            c[i,j+1] =  U2*n[i,0] + W2*n[i,1]
+            d[i,j]   =  U1*t[i,0] + W1*t[i,1] + HOLDD
+            d[i,j+1] =  U2*t[i,0] + W2*t[i,1]
+        else:
+            c[i,j]   =  U1*n[i,0] + W1*n[i,1] + HOLDC
+            HOLDC    =  U2*n[i,0] + W2*n[i,1]
+            d[i,j]   =  U1*t[i,0] + W1*t[i,1] + HOLDD
+            HOLDD    =  U2*t[i,0] + W2*t[i,1]
 
 # Post-processing data
 #-----------------------------------------------------------------------
@@ -155,6 +188,8 @@ for i in range(0,N):
     VEL = 0
     for j in range(0,N+1):
         VEL = VEL + b[i,j]*g[j]
+    for j in range(0,N+NW-1):
+        VEL = VEL + c[i,j]*sig[j]
         
     V[i] = VEL + np.cos(AL)*t[i,0]+np.sin(AL)*t[i,1]
     CP[i] = 1-V[i]**2
