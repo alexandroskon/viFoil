@@ -14,7 +14,7 @@ my studies at the Dept. of Mechanical Engineering and Aeronautics of University 
   
   - [ ] Boundary layer modeling
 
-    - [ ] Wake modelling
+    - [x] Wake modeling
 
     - [ ] Laminar boundary layer
 
