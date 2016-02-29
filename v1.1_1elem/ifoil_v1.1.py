@@ -50,7 +50,7 @@ for i in range(0,N):
             U1,W1,U2,W2 = VOR2DL(1,1,XC[i],ZC[i],PT1[j,0],PT1[j,1],PT2[j,0],PT2[j,1],\
             TH[j],False)
         
-        # Compute c[i,j] influences for unit-vorticity
+        # Compute influences for unit-vorticity
         if (j == 0):
             a[i,0] =  U1*n[i,0] + W1*n[i,1]
             HOLDA  =  U2*n[i,0] + W2*n[i,1]
@@ -112,7 +112,9 @@ else:
     a[N,0] = 1
     a[N,N] = 1
 
-
+# FUTURE CORRECTION for blunt trailing edges: need to close i=0 and i=N 
+# panel with a i=N+1 panel to properly calculate Cp. 
+    
 # Solve system to obtain unit-vorticity (dense matrix)
 #-----------------------------------------------------------------------
 g = np.linalg.solve(a,RHS)
@@ -143,6 +145,7 @@ for i in range(0,N+NW):
     for j in range(0,N+NW):
         # Calculate velocities at i-th colloc. point due to singularities on 
         # the j-th and (j+1)-th corner points (linear singularity)   
+
         
         # j = N corresponds to an imaginary connecting panel, nothing to compute
         if j == N:
@@ -158,9 +161,9 @@ for i in range(0,N+NW):
         
         # Compute c[i,j] influences for unit-vorticity
         if (j == 0 or j == N+1):
-            c[j,0] =  U1*n[i,0] + W1*n[i,1]
+            c[i,j] =  U1*n[i,0] + W1*n[i,1]
             HOLDC  =  U2*n[i,0] + W2*n[i,1]
-            d[j,0] =  U1*t[i,0] + W1*t[i,1]
+            d[i,j] =  U1*t[i,0] + W1*t[i,1]
             HOLDD  =  U2*t[i,0] + W2*t[i,1]
         elif (j == N-1 or j == N+NW-1):
             c[i,j]   =  U1*n[i,0] + W1*n[i,1] + HOLDC
@@ -172,7 +175,7 @@ for i in range(0,N+NW):
             HOLDC    =  U2*n[i,0] + W2*n[i,1]
             d[i,j]   =  U1*t[i,0] + W1*t[i,1] + HOLDD
             HOLDD    =  U2*t[i,0] + W2*t[i,1]
-
+'''
 print('N')
 print(N)
 print('NW')
@@ -193,7 +196,8 @@ print(TH)
 print(XC)
 print(PT1)
 print(DL)
-print(c)
+print(c)'''
+
 # Post-processing data
 #-----------------------------------------------------------------------
 # Aerodynamic computations
@@ -211,9 +215,10 @@ for i in range(0,N):
         VEL = VEL + c[i,j]*sig[j]
         
     V[i] = VEL + np.cos(AL)*t[i,0]+np.sin(AL)*t[i,1]
+    #V[i] = (g[i]+g[i+1])/4 + np.cos(AL)*t[i,0]+np.sin(AL)*t[i,1]
     CP[i] = 1-V[i]**2
     CL = CL + (-1*CP[i])*(np.cos(AL)*np.cos(TH[i]) + np.sin(AL)*np.sin(TH[i]))*DL[i]
-    
+    #CL = CL + (g[i]+g[i+1])*DL[i]
     #REPORT BUG: CL != 0 FOR SYMMETRIC AIRFOILS
 # Plot results
 #-----------------------------------------------------------------------
